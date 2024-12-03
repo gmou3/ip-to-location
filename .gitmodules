@@ -1,6 +1,3 @@
-[submodule "third-party/curl"]
-	path = third-party/curl
-	url = https://github.com/curl/curl
 [submodule "third-party/libdeflate"]
 	path = third-party/libdeflate
 	url = https://github.com/ebiggers/libdeflate.git

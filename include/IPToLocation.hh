@@ -5,6 +5,6 @@
 
 void decompress_gz_file(std::string filename);
 
-void maintain_mmdb_file(const std::string& mmdb_file);
+void maintain_mmdb_file(std::string const& mmdb_file);
 
-std::string get_location_from_ip(const std::string& ip);
+std::string get_location_from_ip(std::string const& ip);

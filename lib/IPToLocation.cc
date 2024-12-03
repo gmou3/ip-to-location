@@ -14,13 +14,6 @@
 #include <string>
 #include <vector>
 
-// Callback function for `curl_easy_setopt` to write data to a file
-size_t write_data(void* ptr, size_t size, size_t nmemb, FILE* stream)
-{
-    size_t written = fwrite(ptr, size, nmemb, stream);
-    return written;
-}
-
 // Function to decompress the mmdb.gz file after download
 void decompress_gz_file(std::string filename)
 {
@@ -43,12 +36,12 @@ void decompress_gz_file(std::string filename)
     }
 
     // Prepare buffer to hold decompressed data (estimate maximum decompressed size)
-    const size_t decompressed_size = gz_data.size() * 4;
+    size_t const decompressed_size = gz_data.size() * 4;
     std::vector<char> decompressed_data(decompressed_size);
 
     // Perform the decompression
     size_t decompressed_len = 0;
-    const int result = libdeflate_gzip_decompress(
+    int const result = libdeflate_gzip_decompress(
         decompressor,
         gz_data.data(),
         gz_data.size(),
@@ -79,13 +72,13 @@ void decompress_gz_file(std::string filename)
 
 // Function to download and update the mmdb file
 // Free database with monthly updates from <https://db-ip.com/>
-void maintain_mmdb_file(const std::string& mmdb_file)
+void maintain_mmdb_file(std::string const& mmdb_file)
 {
     // UTC year and month
     using namespace std::chrono;
-    const time_t now = time(0);
-    const struct tm *utc_time = gmtime(&now);
-    const std::string year = std::to_string(utc_time->tm_year + 1900);
+    time_t const now = time(0);
+    struct tm const *utc_time = gmtime(&now);
+    std::string const year = std::to_string(utc_time->tm_year + 1900);
     std::string month = std::to_string(utc_time->tm_mon + 1);
     if (month.size() == 1)
     {
@@ -100,18 +93,18 @@ void maintain_mmdb_file(const std::string& mmdb_file)
     else
     {
         MMDB_s mmdb;
-        const int status = MMDB_open(mmdb_file.c_str(), MMDB_MODE_MMAP, &mmdb);
+        int const status = MMDB_open(mmdb_file.c_str(), MMDB_MODE_MMAP, &mmdb);
         if (MMDB_SUCCESS != status)
         {
-            std::cerr << "libmaxminddb: Error while opening database file ("<< mmdb_file<< ", " << MMDB_strerror(status) << ")\n";
+            std::cerr << "libmaxminddb: Error opening database file (" << mmdb_file << ", " << MMDB_strerror(status) << ")\n";
             url = "https://download.db-ip.com/free/dbip-city-lite-" + year + "-" + month + ".mmdb.gz";
         }
         else
         {
             // Existing database file's year and month
-            const time_t build_epoch = mmdb.metadata.build_epoch;
-            const struct tm *mmdb_utc_time = gmtime(&build_epoch);
-            const std::string mmdb_year = std::to_string(mmdb_utc_time->tm_year + 1900);
+            time_t const build_epoch = mmdb.metadata.build_epoch;
+            struct tm const *mmdb_utc_time = gmtime(&build_epoch);
+            std::string const mmdb_year = std::to_string(mmdb_utc_time->tm_year + 1900);
             std::string mmdb_month = std::to_string(mmdb_utc_time->tm_mon + 1);
             if (mmdb_month.size() == 1)
             {
@@ -135,16 +128,27 @@ void maintain_mmdb_file(const std::string& mmdb_file)
     if (curl != nullptr)
     {
         FILE* fp = fopen((mmdb_file + ".gz").c_str(), "wb");
+        if (fp == nullptr)
+        {
+            std::cerr << "Error opening " + mmdb_file + ".gz to download MaxMind database\n";
+            return;
+        }
+
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-        const CURLcode res = curl_easy_perform(curl);
+        CURLcode const res = curl_easy_perform(curl);
         curl_easy_cleanup(curl); // always cleanup
-        fclose(fp);
+
+        if (fclose(fp) != 0)
+        {
+            std::cerr << "Error closing " + mmdb_file + ".gz\n";
+            return;
+        }
 
         if (res != CURLE_OK)
         {
-            std::cerr << "libcurl: Error downloading " + url + " to " + mmdb_file + ".gz - " << curl_easy_strerror(res) << '\n';
+            std::cerr << "libcurl: Error downloading " + url + " - " << curl_easy_strerror(res) << '\n';
             return;
         }
 
@@ -153,7 +157,7 @@ void maintain_mmdb_file(const std::string& mmdb_file)
     }
 }
 
-std::string get_location_from_ip(const std::string& ip)
+std::string get_location_from_ip(std::string const& ip)
 {
     // Get the home directory from environment variables
     const char* home_dir = std::getenv("HOME");  // Linux/macOS
@@ -162,7 +166,7 @@ std::string get_location_from_ip(const std::string& ip)
     }
     if (!home_dir)
     {
-        std::cerr << "Could not find the home directory" << std::endl;
+        std::cerr << "Could not find the home directory\n";
         return "";
     }
     std::filesystem::path home_path(home_dir);
@@ -178,7 +182,7 @@ std::string get_location_from_ip(const std::string& ip)
     int status = MMDB_open(mmdb_file.c_str(), MMDB_MODE_MMAP, &mmdb);
     if (MMDB_SUCCESS != status)
     {
-        std::cerr << "libmaxminddb: Error while opening database file (" + mmdb_file + ", " + MMDB_strerror(status) + ")\n";
+        std::cerr << "libmaxminddb: Error opening database file (" + mmdb_file + ", " + MMDB_strerror(status) + ")\n";
         return "";
     }
     int gai_error = 0;
@@ -186,7 +190,7 @@ std::string get_location_from_ip(const std::string& ip)
     MMDB_lookup_result_s result = MMDB_lookup_string(&mmdb, ip.c_str(), &gai_error, &mmdb_error);
     if (0 != gai_error || MMDB_SUCCESS != mmdb_error || !result.found_entry)
     {
-        std::cerr << "libmaxminddb: Error while looking up IP " + ip + "\n";
+        std::cerr << "libmaxminddb: Error looking up IP " + ip + "\n";
         MMDB_close(&mmdb);
         return "";
     }
@@ -195,7 +199,7 @@ std::string get_location_from_ip(const std::string& ip)
     status = MMDB_get_value(&result.entry, &entry_data, "city", "names", "en", NULL);
     if (MMDB_SUCCESS != status || !entry_data.has_data)
     {
-        std::cerr << "libmaxminddb: Error while getting value of city for IP " + ip + "\n";
+        std::cerr << "libmaxminddb: Error getting value of city for IP " + ip + "\n";
     }
     else
     {
@@ -205,7 +209,7 @@ std::string get_location_from_ip(const std::string& ip)
     status = MMDB_get_value(&result.entry, &entry_data, "country", "names", "en", NULL);
     if (MMDB_SUCCESS != status || !entry_data.has_data)
     {
-        std::cerr << "libmaxminddb: Error while getting value of country for IP " + ip + "\n";
+        std::cerr << "libmaxminddb: Error getting value of country for IP " + ip + "\n";
         MMDB_close(&mmdb);
         return "";
     }
