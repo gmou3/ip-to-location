@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+namespace fs = std::filesystem;
+
 // Function to decompress the mmdb.gz file after download
 void decompress_gz_file(std::string filename)
 {
@@ -77,7 +79,7 @@ void maintain_mmdb_file(std::string const& mmdb_file)
     // UTC year and month
     using namespace std::chrono;
     time_t const now = time(0);
-    struct tm const *utc_time = gmtime(&now);
+    struct tm const* utc_time = gmtime(&now);
     std::string const year = std::to_string(utc_time->tm_year + 1900);
     std::string month = std::to_string(utc_time->tm_mon + 1);
     if (month.size() == 1)
@@ -86,7 +88,7 @@ void maintain_mmdb_file(std::string const& mmdb_file)
     }
 
     std::string url;
-    if (!std::filesystem::exists(mmdb_file))
+    if (!fs::exists(mmdb_file))
     {
         url = "https://download.db-ip.com/free/dbip-city-lite-" + year + "-" + month + ".mmdb.gz";
     }
@@ -160,7 +162,7 @@ void maintain_mmdb_file(std::string const& mmdb_file)
 std::string get_location_from_ip(std::string const& ip)
 {
     // Get the home directory from environment variables
-    const char* home_dir = std::getenv("HOME");  // Linux/macOS
+    char const* home_dir = std::getenv("HOME");  // Linux/macOS
     if (!home_dir) {
         home_dir = std::getenv("USERPROFILE");  // Windows
     }
@@ -169,11 +171,21 @@ std::string get_location_from_ip(std::string const& ip)
         std::cerr << "Could not find the home directory\n";
         return "";
     }
-    std::filesystem::path home_path(home_dir);
+
+    // Folder to save files
+    fs::path const folder_path = fs::path(home_dir) / ".ip-to-location";
+    if (!fs::exists(folder_path))
+    {
+        if (!fs::create_directory(folder_path))
+        {
+            std::cout << "Failed to create " + folder_path.string() + " directory\n";
+            return "";
+        }
+    }
 
     // Database file path
-    std::filesystem::path mmdb_file_path = home_path / "dbip-city-lite.mmdb";
-    std::string mmdb_file = mmdb_file_path.string();
+    fs::path const mmdb_file_path = folder_path / "dbip-city-lite.mmdb";
+    std::string const mmdb_file = mmdb_file_path.string();
 
     maintain_mmdb_file(mmdb_file);
 
