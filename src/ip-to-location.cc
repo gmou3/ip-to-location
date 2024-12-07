@@ -1,11 +1,11 @@
 #include <iostream>
 #include "IPToLocation.hh"
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    if (argc > 1)
+    for (int i = 1; i < argc; i++)
     {
-        std::cout << get_location_from_ip(argv[1]) << std::endl;
+        std::cout << get_location_from_ip(argv[i]) << '\n';
     }
-	return 0;
+    return 0;
 }

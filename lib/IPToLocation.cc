@@ -4,7 +4,6 @@
 #include <libdeflate.h>
 #include <maxminddb.h>
 
-#include <chrono>
 #include <cstddef>
 #include <cstdio>
 #include <ctime>
@@ -105,7 +104,7 @@ void maintain_mmdb_file(std::string const& mmdb_file)
         {
             // Existing database file's year and month
             time_t const build_epoch = mmdb.metadata.build_epoch;
-            struct tm const *mmdb_utc_time = gmtime(&build_epoch);
+            struct tm const* mmdb_utc_time = gmtime(&build_epoch);
             std::string const mmdb_year = std::to_string(mmdb_utc_time->tm_year + 1900);
             std::string mmdb_month = std::to_string(mmdb_utc_time->tm_mon + 1);
             if (mmdb_month.size() == 1)
@@ -166,9 +165,10 @@ void maintain_mmdb_file(std::string const& mmdb_file)
 std::string get_location_from_ip(std::string const& ip)
 {
     // Get the home directory from environment variables
-    char const* home_dir = std::getenv("HOME");  // Linux/macOS
-    if (!home_dir) {
-        home_dir = std::getenv("USERPROFILE");  // Windows
+    char const* home_dir = std::getenv("HOME"); // Linux/macOS
+    if (!home_dir)
+    {
+        home_dir = std::getenv("USERPROFILE"); // Windows
     }
     if (!home_dir)
     {

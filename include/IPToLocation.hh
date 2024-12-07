@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <string>
 
 void decompress_gz_file(std::string filename);

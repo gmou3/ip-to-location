@@ -1,6 +1,6 @@
 # _ip-to-location_
 
-A tool that transforms an `IP` to a string of the form `City, Country`.
+A tool that transforms an `IP` into a string of the form `City, Country`.
 
 It works by scraping a free `mmdb` database from [db-ip](https://db-ip.com/) and performing `IP` lookups using `libmaxminddb`.
 
@@ -25,7 +25,7 @@ cmake --build .
 
 ## Usage
 
-Run the compiled `ip-to-location` executable with an `IP` address as the argument. For example, to get the location of your own `IP`, run
+Run the compiled `ip-to-location` executable with an `IP` address as an argument. For example, to get the location of your own `IP`, run
 ```bash
 ./ip-to-location $(curl -s ifconfig.me)
 ```
